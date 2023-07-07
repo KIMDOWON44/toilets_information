@@ -1,5 +1,6 @@
 import streamlit as st
 from streamlit.components.v1 import html
+import folium
 
 # JavaScript code to get the user's geolocation
 geolocation_js = """
