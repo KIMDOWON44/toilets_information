@@ -1,57 +1,64 @@
-import pandas as pd
 import streamlit as st
-from streamlit.components.v1 import html
+import pandas as pd
 import folium
-from streamlit.components.v1 import declare_component
+from streamlit.components.v1 import html
 
-# JavaScript code to get the user's geolocation
+# 스마트폰의 위치 정보를 얻어오는 JavaScript 코드
 geolocation_js = """
-const successCallback = (position) => {
-    const latitude = position.coords.latitude;
-    const longitude = position.coords.longitude;
-    const location = [latitude, longitude];
-    window.postMessage(location);
-};
-
-const errorCallback = (error) => {
-    console.error(error.message);
-};
-
-navigator.geolocation.getCurrentPosition(successCallback, errorCallback);
+<script>
+if ('geolocation' in navigator) {
+    navigator.geolocation.getCurrentPosition(function(position) {
+        var lat = position.coords.latitude;
+        var lon = position.coords.longitude;
+        var location = [lat, lon];
+        window.location = location;
+    });
+} else {
+    alert("Geolocation is not supported by this browser.");
+}
+</script>
 """
 
-# Streamlit's JavaScript event listener to receive geolocation data
-event_listener_js = """
-window.addEventListener("message", (event) => {
-    const location = event.data;
-    const latitude = location[0];
-    const longitude = location[1];
-    const marker = L.marker([latitude, longitude], { icon: L.icon({ iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png', iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], }) }).addTo(tile_seoul_map);
-    tile_seoul_map.setView([latitude, longitude], 12);
-});
+# 스마트폰의 위치 정보를 얻어오는 JavaScript 코드를 실행
+html(geolocation_js)
+
+
+df = pd.read_csv("./data/Seoul_toilet_locations.csv", encoding="utf-8")
+sampled_df = df.sample(10)
+
+tile_seoul_map = folium.Map(location=[37.55, 126.98], zoom_start=12, tiles="Stamen Terrain")
+
+for i in range(len(sampled_df)):
+    name, latitude, longitude = sampled_df.iloc[i]
+    folium.Marker([latitude, longitude], popup=name).add_to(tile_seoul_map)
+
+# 스마트폰의 위치 정보를 얻어오는 JavaScript 코드
+geolocation_js = """
+<script>
+if ('geolocation' in navigator) {
+    navigator.geolocation.getCurrentPosition(function(position) {
+        var lat = position.coords.latitude;
+        var lon = position.coords.longitude;
+        var location = [lat, lon];
+        window.location = location;
+    });
+} else {
+    alert("Geolocation is not supported by this browser.");
+}
+</script>
 """
 
-# Streamlit app code
-def display_map_with_current_location():
-    tile_seoul_map = folium.Map(location=[37.55, 126.98], zoom_start=12, tiles="Stamen Terrain")
+# 스마트폰의 위치 정보를 얻어오는 JavaScript 코드를 실행
+html(geolocation_js)
 
-    df = pd.read_csv("./data/Seoul_toilet_locations.csv", encoding="utf-8")
-    sampled_df = df.sample(10)
+# 사용자의 위치 정보를 얻어옴
+user_location = st.session_state.get('location', None)
 
-    for i in range(len(sampled_df)):
-        name, latitude, longitude = sampled_df.iloc[i]
-        folium.Marker([latitude, longitude], popup=name).add_to(tile_seoul_map)
+if user_location:
+    # 사용자의 위치에 마커 추가
+    folium.Marker(user_location, popup="My Location", icon=folium.Icon(color='red')).add_to(tile_seoul_map)
 
-    map_html = tile_seoul_map.get_root().render()
+map_html = tile_seoul_map.get_root().render()
 
-    html("<div id='map'></div>", height=500)
-    html("""
-        <script src="https://cdn.jsdelivr.net/npm/leaflet@1.7.1/dist/leaflet.js"></script>
-        <script>{}</script>
-        <script>{}</script>
-    """.format(geolocation_js, event_listener_js))
-    html(map_html)
-
-if __name__ == "__main__":
-    st.title("Seoul Toilet Locations")
-    display_map_with_current_location()
+st.title("Seoul Toilet Locations")
+html(map_html, height=500)
