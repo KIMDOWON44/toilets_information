@@ -21,9 +21,31 @@ user_longitude = None
 
 if st.button("Get My Location"):
     user_location.text("Locating...")
-    user_latitude = 37.2113408  # Replace with actual latitude
-    user_longitude = 127.0611968  # Replace with actual longitude
-    user_location.text("Location Found!")
+
+    # Request user's location using the Geolocation API
+    js_code = """
+    navigator.geolocation.getCurrentPosition(
+        function(position) {
+            const latitude = position.coords.latitude;
+            const longitude = position.coords.longitude;
+            const accuracy = position.coords.accuracy;
+
+            // Update the Streamlit app with the user's location
+            const location = {latitude, longitude, accuracy};
+            streamlit.sessionState.location = location;
+        },
+        function(error) {
+            console.error(error.message);
+        }
+    );
+    """
+    html("<script>{}</script>".format(js_code))
+
+    # Wait for the user's location to be updated
+    if "location" in st.session_state and st.session_state.location is not None:
+        user_latitude = st.session_state.location["latitude"]
+        user_longitude = st.session_state.location["longitude"]
+        user_location.text("Location Found!")
 
 if user_latitude is not None and user_longitude is not None:
     # Add user's location marker
