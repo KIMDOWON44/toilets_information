@@ -5,7 +5,7 @@ import requests
 df = pd.read_csv("./data/Seoul_toilet_locations.csv", encoding="utf-8")
 sampled_df = df.sample(10)
 
-kakao_api_key = "f90a8ec6534f0705940038780c15c9bc"  # Replace with your Kakao Maps API key
+kakao_api_key = "KAKAOMAP_API"  # Replace with your Kakao Maps API key
 kakao_map_url = "https://dapi.kakao.com/v2/maps/staticmap"
 map_params = {
     "center": "126.98,37.55",
@@ -36,4 +36,13 @@ if user_latitude is not None and user_longitude is not None:
     map_params["markers"] += f"|{user_longitude},{user_latitude}"
     response = requests.get(kakao_map_url, params=map_params)
 
-st.image(response.content, width=800)
+if response.status_code == 200:
+    st.image(response.content, width=800)
+else:
+    st.error("Failed to retrieve the map image.")
+
+content_type = response.headers.get('Content-Type')
+if content_type and content_type.startswith('image/'):
+    st.image(response.content, width=800)
+else:
+    st.error("The response is not a valid image.")
